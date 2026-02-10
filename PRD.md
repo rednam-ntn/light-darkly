@@ -1,0 +1,732 @@
+# Product Requirements Document
+# Light Darkly - LaunchDarkly Feature Flag Viewer
+
+## 1. Product Overview
+
+**Light Darkly** is a web-based dashboard for viewing and exploring LaunchDarkly feature flags in read-only mode. It provides a clean, intuitive interface to visualize all feature flags, their configurations, targeting rules, and variations across multiple projects and environments.
+
+### Problem Statement
+LaunchDarkly's web interface requires full account access and can be overwhelming for stakeholders who only need to view flag configurations. Light Darkly provides a focused, read-only viewer using LaunchDarkly's API.
+
+### Solution
+A lightweight React web application that connects to LaunchDarkly's REST API using a read-only access token, allowing users to browse projects, environments, and feature flags with detailed rule visualization.
+
+---
+
+## 2. Goals & Objectives
+
+### Primary Goals
+- Provide read-only access to LaunchDarkly feature flag data
+- Display flag configurations in an easy-to-understand format
+- Support multiple projects and environments
+- Ensure API key security through environment variables
+
+### Success Metrics
+- Fast load times (<2s for flag list)
+- Clear visualization of complex targeting rules
+- Secure API key handling (never exposed in client)
+- Responsive design works on desktop and tablet
+
+### Key Differentiators
+- Focused, read-only interface (no accidental modifications)
+- Clean, modern UI with progressive disclosure
+- No account management needed (just API key)
+- Lightweight and fast (client-side only, no backend database)
+
+---
+
+## 3. Target Users
+
+### User Persona 1: Product Manager
+- **Needs:** View current flag states, understand rollout configurations
+- **Pain Points:** LaunchDarkly UI has too many options, risk of accidental changes
+- **Use Case:** Check which features are enabled in production environment
+
+### User Persona 2: QA Engineer
+- **Needs:** Verify flag configurations match test plans, inspect targeting rules
+- **Pain Points:** Need read-only access without full admin permissions
+- **Use Case:** Validate flag setup before release testing
+
+### User Persona 3: Developer (Non-Admin)
+- **Needs:** Quick reference for flag keys, variations, and current state
+- **Pain Points:** Context-switching to LaunchDarkly dashboard interrupts flow
+- **Use Case:** Verify flag configuration while debugging
+
+---
+
+## 4. Features & Requirements
+
+### Core Features (MVP)
+
+#### F1: API Key Configuration (Environment Variable Only)
+- [ ] Load API token from `.env` file via `VITE_LD_API_TOKEN` environment variable
+- [ ] NO UI input for API key - token is configured at build/deploy time only
+- [ ] Validate token on app startup by making test API call
+- [ ] Display connection status in header (connected/error/missing token)
+- [ ] Show clear error page if `VITE_LD_API_TOKEN` is not set or invalid
+- **Acceptance Criteria:** App reads token from `.env`, validates on startup, shows error if missing/invalid. No UI for token input.
+
+#### F2: Project Selection
+- [ ] Fetch and display all accessible projects
+- [ ] Show project name and key
+- [ ] Allow user to select a project
+- **Acceptance Criteria:** All projects from API are listed, clicking one loads its environments
+
+#### F3: Environment Navigation (REMOVED from Main Dashboard)
+- [ ] Environments are NOT selectable on the main dashboard
+- [ ] Environment switching is ONLY available on the Flag Detail page (see F5)
+- [ ] Main dashboard shows flag overview across ALL environments simultaneously
+- **Acceptance Criteria:** Main dashboard has no environment selector; all-env overview is shown per flag
+
+#### F4: Feature Flag List (All-Environment Overview)
+- [ ] Display flags for selected project with overview across ALL environments
+- [ ] Fixed pagination: 5 flags per page (NOT configurable - to limit API load)
+- [ ] Each flag card shows:
+  - Flag name and key
+  - Type badge (Boolean/Multivariate)
+  - Status grid: On/Off indicator for EACH environment (e.g., Prod: On, Stage: Off, Dev: On)
+  - Rule count per environment
+- [ ] Search flags by name or key
+- [ ] Filter by status (on/off in any env), type, or tags
+- [ ] Pagination controls: Previous/Next with page number display
+- **Acceptance Criteria:** 5 flags per page (fixed), each flag shows status across all environments, pagination works correctly
+
+#### F5: Feature Flag Details (with Environment Selector)
+- [ ] Click on flag from list to view full details
+- [ ] **Environment selector dropdown** at top of detail page
+  - Lists all environments for the project
+  - Defaults to first environment (e.g., Production)
+  - Switching environment updates all detail sections below
+  - Persist selected environment in URL query param
+- [ ] Display header: name, key, description, type, created date
+- [ ] Show all variations with name, value, and description
+- [ ] Display targeting rules for SELECTED environment:
+  - Rule description
+  - Conditions (attribute, operator, values)
+  - Rollout strategy (percentage or fixed variation)
+- [ ] Show individual targets for SELECTED environment
+- [ ] Display default rule (fallthrough) for SELECTED environment
+- [ ] Show prerequisites (dependent flags)
+- **Acceptance Criteria:** Environment selector changes all targeting/rule data. All flag data for selected environment is clearly presented.
+
+#### F6: Responsive Design
+- [ ] Desktop layout (1280px+): sidebar navigation + main content
+- [ ] Tablet layout (768px-1279px): collapsible sidebar
+- [ ] Mobile layout (< 768px): stacked layout with bottom nav
+- **Acceptance Criteria:** App is usable on all screen sizes without horizontal scroll
+
+### Nice-to-have Features (Post-MVP)
+
+#### F7: Flag History (Future)
+- [ ] Show flag change audit log
+- [ ] Display who changed what and when
+
+#### F8: Export Configurations (Future)
+- [ ] Export flag configurations as JSON
+- [ ] Copy flag settings to clipboard
+
+#### F9: Multi-Account Support (Future)
+- [ ] Store multiple API keys
+- [ ] Switch between LaunchDarkly accounts
+
+#### F10: Dark Mode (Future)
+- [ ] Toggle dark/light theme
+- [ ] Persist theme preference
+
+---
+
+## 5. User Flows
+
+### Main User Flow: View Feature Flag Details
+
+```
+[App Start] → [Load API Key from .env]
+                     ↓
+              [Validate Token via API]
+               ↓              ↓
+          [Success]       [Error/Missing]
+               ↓              ↓
+      [Load Projects]  [Show Error Page]
+               ↓
+      [Select Project]
+               ↓
+      [Browse Flag List]
+      (5 flags/page, all-env overview)
+               ↓
+      [Click Flag] → [Flag Detail Page]
+               ↓
+      [Select Environment] (dropdown)
+               ↓
+      [View Rules & Variations for env]
+               ↓
+      [Switch env or Back to list]
+```
+
+### App Startup Flow
+
+```
+[App Loads] → [Read VITE_LD_API_TOKEN from .env]
+                      ↓
+              [Token exists?]
+               ↓            ↓
+          [Yes]          [No]
+               ↓            ↓
+     [Validate API]  [Show "Missing Token" Error Page]
+          ↓       ↓       (with .env setup instructions)
+    [Valid]   [Invalid]
+          ↓       ↓
+  [Load App] [Show "Invalid Token" Error Page]
+```
+
+---
+
+## 6. Wireframes
+
+### Screen 1: Error Page (Missing/Invalid API Token)
+```
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│          Light Darkly                           │
+│     LaunchDarkly Feature Flag Viewer            │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │                                           │ │
+│  │  ⚠ API Token Not Configured              │ │
+│  │                                           │ │
+│  │  To use Light Darkly, add your            │ │
+│  │  LaunchDarkly read-only API token         │ │
+│  │  to the .env file:                        │ │
+│  │                                           │ │
+│  │  ┌─────────────────────────────────────┐  │ │
+│  │  │ VITE_LD_API_TOKEN=api-xxx-xxxxxx   │  │ │
+│  │  └─────────────────────────────────────┘  │ │
+│  │                                           │ │
+│  │  Then restart the application.            │ │
+│  │                                           │ │
+│  │  Get token from LaunchDarkly:             │ │
+│  │  Account Settings > Authorization >       │ │
+│  │  Create Token (Reader role)               │ │
+│  │                                           │ │
+│  └───────────────────────────────────────────┘ │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+### Screen 2: Main Dashboard (All-Environment Flag Overview)
+```
+┌───────────────────────────────────────────────────────────────────┐
+│ Light Darkly                   [Project ▼]      ● Connected      │
+├───────────────────────────────────────────────────────────────────┤
+│  🔍 Search flags...                              [Filter ▼]      │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐   │
+│  │ new-checkout-flow                              Boolean     │   │
+│  │ "Enable new checkout flow"                                │   │
+│  │                                                            │   │
+│  │   Prod: ● On    Stage: ● On    Dev: ○ Off                │   │
+│  │   Rules: 2       Rules: 1       Rules: 0                  │   │
+│  └───────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐   │
+│  │ dark-mode                                      Boolean     │   │
+│  │ "Toggle dark mode theme"                                  │   │
+│  │                                                            │   │
+│  │   Prod: ● On    Stage: ● On    Dev: ● On                 │   │
+│  │   Rules: 0       Rules: 0       Rules: 0                  │   │
+│  └───────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐   │
+│  │ recommendation-algo                        Multivariate    │   │
+│  │ "ML recommendation algorithm version"                     │   │
+│  │                                                            │   │
+│  │   Prod: ● On    Stage: ○ Off   Dev: ● On                 │   │
+│  │   Rules: 4       Rules: 0       Rules: 2                  │   │
+│  └───────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ... (2 more flags on this page)                                  │
+│                                                                   │
+│                    [← Prev]  Page 1 of 10  [Next →]              │
+│                    (5 flags per page - fixed)                     │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### Screen 3: Feature Flag Detail View (with Environment Selector)
+```
+┌───────────────────────────────────────────────────────────────────┐
+│ Light Darkly                   [← Back to Flags]                  │
+├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  new-checkout-flow                            [Boolean Flag]      │
+│  Key: new-checkout-flow                        Created: ...       │
+│  "Enable new checkout flow with one-click purchase"               │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  Environment: [Production ▼]                                │ │
+│  │               ┌──────────────┐                              │ │
+│  │               │ ● Production │  ← currently viewing         │ │
+│  │               │   Staging    │                              │ │
+│  │               │   Development│                              │ │
+│  │               └──────────────┘                              │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Variations                                                  │ │
+│  │ ─────────────────────────────────────────────────────────── │ │
+│  │ • True:  "Enable new flow"                                  │ │
+│  │ • False: "Use legacy checkout"                              │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Targeting Rules (Production)                                │ │
+│  │ ─────────────────────────────────────────────────────────── │ │
+│  │ Rule 1: Beta Users                                          │ │
+│  │   IF user.segment = "beta-testers"                          │ │
+│  │   THEN serve: True (100%)                                   │ │
+│  │                                                              │ │
+│  │ Rule 2: Gradual Rollout                                     │ │
+│  │   IF user.country = "US"                                    │ │
+│  │   THEN serve: True (25%), False (75%)                       │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Individual Targets (Production)                             │ │
+│  │ ─────────────────────────────────────────────────────────── │ │
+│  │ True: user-123, user-456                                    │ │
+│  │ False: user-789                                             │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Default Rule / Fallthrough (Production)                     │ │
+│  │ ─────────────────────────────────────────────────────────── │ │
+│  │ Serve: False (Off for everyone else)                        │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Prerequisites                                               │ │
+│  │ ─────────────────────────────────────────────────────────── │ │
+│  │ Requires: "auth-v2" = True                                  │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Data Models
+
+### Entity Relationship Diagram
+
+```
+┌────────────────┐
+│   Account      │
+│ (External LD)  │
+└────────┬───────┘
+         │ 1
+         │
+         │ N
+┌────────┴───────┐
+│    Project     │
+├────────────────┤
+│ key            │
+│ name           │
+└────────┬───────┘
+         │ 1
+         │
+         │ N
+┌────────┴───────────┐
+│   Environment      │
+├────────────────────┤
+│ key                │
+│ name               │
+│ color              │
+└────────┬───────────┘
+         │ 1
+         │
+         │ N
+┌────────┴────────────┐
+│   FeatureFlag       │
+├─────────────────────┤
+│ key                 │
+│ name                │
+│ kind (bool/multi)   │
+│ description         │
+│ on (boolean)        │
+│ variations[]        │
+│ targeting           │
+│   - targets[]       │
+│   - rules[]         │
+│   - fallthrough     │
+└─────────────────────┘
+```
+
+### Schema Details
+
+#### Project
+```typescript
+interface Project {
+  key: string;           // "my-project"
+  name: string;          // "My Project"
+  environments: Environment[];
+  tags: string[];
+}
+```
+
+#### Environment
+```typescript
+interface Environment {
+  key: string;           // "production"
+  name: string;          // "Production"
+  color: string;         // "417505" (hex)
+  confirmChanges: boolean;
+}
+```
+
+#### FeatureFlag
+```typescript
+interface FeatureFlag {
+  key: string;                    // "new-checkout-flow"
+  name: string;                   // "New Checkout Flow"
+  description: string;
+  kind: "boolean" | "multivariate";
+  creationDate: number;           // Unix timestamp
+  archived: boolean;
+  on: boolean;                    // Flag enabled?
+  variations: Variation[];
+  environments: {
+    [envKey: string]: FlagEnvironmentConfig;
+  };
+}
+
+interface Variation {
+  _id: string;
+  value: any;                     // true/false for boolean, any JSON for multivariate
+  name?: string;
+  description?: string;
+}
+
+interface FlagEnvironmentConfig {
+  on: boolean;
+  targets: Target[];
+  rules: TargetingRule[];
+  fallthrough: Fallthrough;
+  offVariation: number;           // Index into variations array
+  prerequisites: Prerequisite[];
+}
+
+interface Target {
+  values: string[];               // ["user-123", "user-456"]
+  variation: number;              // Index into variations array
+}
+
+interface TargetingRule {
+  _id: string;
+  description?: string;
+  clauses: Clause[];
+  variation?: number;             // Fixed variation
+  rollout?: Rollout;              // Percentage rollout
+}
+
+interface Clause {
+  attribute: string;              // "email", "country", "customAttr"
+  op: string;                     // "in", "matches", "greaterThan", etc.
+  values: any[];
+  negate: boolean;
+}
+
+interface Rollout {
+  variations: WeightedVariation[];
+  bucketBy: string;               // "key" or custom attribute
+}
+
+interface WeightedVariation {
+  variation: number;              // Index into variations array
+  weight: number;                 // 0-100000 (percentage * 1000)
+}
+
+interface Fallthrough {
+  variation?: number;
+  rollout?: Rollout;
+}
+
+interface Prerequisite {
+  key: string;                    // Key of prerequisite flag
+  variation: number;              // Required variation
+}
+```
+
+---
+
+## 8. Technical Architecture
+
+### System Diagram
+
+```
+┌─────────────────┐
+│   Browser       │
+│                 │
+│  React + Vite   │
+│  TypeScript     │
+│  TanStack Query │
+│  Tailwind CSS   │
+└────────┬────────┘
+         │
+         │ HTTPS API Calls
+         │ (Authorization: Bearer <token>)
+         │
+         ▼
+┌─────────────────────────┐
+│  LaunchDarkly API       │
+│  api.launchdarkly.com   │
+│                         │
+│  GET /api/v2/projects   │
+│  GET /api/v2/flags/:key │
+└─────────────────────────┘
+```
+
+### Docker Infrastructure
+
+**No database or backend services needed** - this is a pure frontend app that calls LaunchDarkly API directly.
+
+| Service  | Image       | Purpose                    | Port |
+| -------- | ----------- | -------------------------- | ---- |
+| frontend | node:20     | Vite dev server (dev mode) | 5173 |
+| frontend | nginx:alpine| Serve static build (prod)  | 80   |
+
+### Tech Stack
+
+**Language:** TypeScript
+- **Justification:** Type safety prevents API response handling errors, better IDE support, catches bugs at compile time
+
+**Framework:** React 18 + Vite
+- **Justification:** Vite offers fastest dev experience, React has best ecosystem for dashboard UIs, widespread knowledge
+
+**State Management:** TanStack Query (React Query) v5
+- **Justification:** Purpose-built for API state, automatic caching/refetching, optimistic updates, reduces boilerplate
+
+**Styling:** Tailwind CSS v4
+- **Justification:** Rapid development, consistent design system, no CSS file overhead, great mobile-first utilities
+
+**HTTP Client:** Fetch API (native) with TanStack Query
+- **Justification:** No additional dependencies, modern browsers support, works seamlessly with React Query
+
+**Routing:** React Router v7
+- **Justification:** Standard for React SPAs, supports nested routes, URL state management
+
+**Docker:** Docker + Docker Compose
+- **Justification:** Easy local development, consistent environments, simple deployment
+
+---
+
+## 9. API Design
+
+This app consumes LaunchDarkly's REST API. No custom backend API.
+
+### LaunchDarkly API Endpoints Used
+
+| Endpoint                                          | Method | Description                     | Response                  |
+| ------------------------------------------------- | ------ | ------------------------------- | ------------------------- |
+| `/api/v2/projects`                                | GET    | List all projects               | Project[]                 |
+| `/api/v2/flags/{projectKey}`                      | GET    | List flags for project          | FeatureFlag[]             |
+| `/api/v2/flags/{projectKey}/{flagKey}`            | GET    | Get specific flag details       | FeatureFlag               |
+| `/api/v2/projects/{projectKey}/environments`      | GET    | List environments for project   | Environment[]             |
+
+### Authentication
+All requests include header:
+```
+Authorization: Bearer {api_access_token}
+```
+
+### Error Handling
+- **401 Unauthorized:** Invalid or expired API token → Show re-authentication prompt
+- **403 Forbidden:** Token lacks required permissions → Display permission error
+- **404 Not Found:** Resource doesn't exist → Show friendly "not found" message
+- **429 Rate Limited:** Too many requests → Implement exponential backoff, show notice
+- **500 Server Error:** LaunchDarkly API issue → Display error, offer retry
+
+---
+
+## 10. UI/UX Guidelines
+
+### Color Scheme
+- **Primary:** Blue (#3b82f6) - LaunchDarkly brand color
+- **Success:** Green (#10b981) - Flag enabled, successful operations
+- **Warning:** Amber (#f59e0b) - Partial rollouts, cautions
+- **Error:** Red (#ef4444) - Flag disabled, errors
+- **Neutral:** Gray scale (#f9fafb to #1f2937) - Backgrounds, borders, text
+
+### Typography
+- **Font Family:** Inter (sans-serif) - clean, readable, modern
+- **Headings:** 24px (H1), 20px (H2), 16px (H3) - bold weight
+- **Body:** 14px - regular weight, 1.5 line height
+- **Code:** JetBrains Mono (monospace) - for flag keys, JSON values
+
+### Component Library
+Use Headless UI + Tailwind CSS for:
+- Dropdowns (project/environment selectors)
+- Modals (API key setup)
+- Disclosure panels (collapsible rule sections)
+- Combobox (searchable flag list)
+
+### Responsive Breakpoints
+- **Mobile:** 0-767px (single column, stacked layout)
+- **Tablet:** 768px-1279px (collapsible sidebar)
+- **Desktop:** 1280px+ (fixed sidebar, spacious layout)
+
+### Interactive Elements
+- **Hover states:** Subtle background color change (#f3f4f6)
+- **Active states:** Darker background (#e5e7eb)
+- **Loading states:** Skeleton screens, spinner for long operations
+- **Empty states:** Friendly illustrations with helpful messages
+
+### Accessibility
+- Keyboard navigation support (Tab, Enter, Escape)
+- ARIA labels for screen readers
+- Sufficient color contrast (WCAG AA minimum)
+- Focus indicators visible on all interactive elements
+
+---
+
+## 11. Research Sources
+
+### LaunchDarkly API & Feature Flags
+- [LaunchDarkly API Overview](https://launchdarkly.com/docs/api)
+- [Using the REST API](https://launchdarkly.com/docs/guides/api/rest-api)
+- [API Access Tokens](https://launchdarkly.com/docs/home/account/api)
+- [List Feature Flags Endpoint](https://launchdarkly.com/docs/api/feature-flags/get-feature-flags)
+- [Targeting Rules Documentation](https://launchdarkly.com/docs/home/flags/target-rules)
+- [Feature Flag Variations](https://launchdarkly.com/docs/home/flags/variations)
+- [Percentage Rollouts](https://launchdarkly.com/docs/home/releases/percentage-rollouts)
+
+### Dashboard UI/UX Best Practices
+- [Dashboard UX Design Best Practices - Lazarev](https://www.lazarev.agency/articles/dashboard-ux-design)
+- [Dashboard Design UX Patterns - Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-data-dashboards)
+- [Effective Dashboard Design Principles 2025 - UXPin](https://www.uxpin.com/studio/blog/dashboard-design-principles/)
+- [Dashboard UX Design Tips - Digiteum](https://www.digiteum.com/dashboard-ux-design-tips-best-practices/)
+
+### API Security Best Practices
+- [API Key Safety Best Practices - OpenAI](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)
+- [API Key Security - Legit Security](https://www.legitsecurity.com/aspm-knowledge-base/api-key-security-best-practices)
+- [How to Store API Keys Securely - Strapi](https://strapi.io/blog/how-to-store-API-keys-securely)
+- [API Security with Environment Variables - Hoop.dev](https://hoop.dev/blog/api-security-best-practices-protecting-secrets-with-environment-variables/)
+
+### React/TypeScript Architecture
+- [React Best Practices 2026 - Technostacks](https://technostacks.com/blog/react-best-practices/)
+- [React Architecture Patterns 2025 - GeeksforGeeks](https://www.geeksforgeeks.org/reactjs/react-architecture-pattern-and-best-practices/)
+- [Tao of React - Alex Kondov](https://alexkondov.com/tao-of-react/)
+- [React.js 2026 Performance - Expert App Devs](https://medium.com/@expertappdevs/react-js-2026-performance-secure-architecture-84f78ad650ab)
+
+### Docker + Vite + React
+- [Containerizing Vite React TypeScript with Docker Compose](https://codeplater.hashnode.dev/step-by-step-guide-containerizing-your-vite-react-typescript-projects-with-docker-compose)
+- [Production-Ready React TypeScript Vite Setup 2026](https://oneuptime.com/blog/post/2026-01-08-react-typescript-vite-production-setup/view)
+- [Use Containers for React.js Development - Docker Docs](https://docs.docker.com/guides/reactjs/develop/)
+- [Dockerizing Vite React - Innokrea](https://www.innokrea.com/dockerizing-the-frontend-do-it-right-with-react-js-vite/)
+
+### Competitive Analysis (Open Source Alternatives)
+- [7 Best Open Source LaunchDarkly Alternatives](https://openalternative.co/alternatives/launchdarkly)
+- [LaunchDarkly Alternatives - ConfigCat](https://configcat.com/alternativefeatureflagservice/)
+- [LaunchDarkly Alternatives - Flagsmith](https://www.flagsmith.com/blog/launchdarkly-alternatives)
+
+---
+
+## 12. Security Considerations
+
+### API Token Storage
+- **Development:** Store in `.env.local` file (never commit to Git)
+- **Production:** Use environment variables in Docker container
+- **NO client-side storage** - token is ONLY loaded from environment variables at build/runtime
+
+### Best Practices
+- Add `.env.local` and `.env` to `.gitignore`
+- Use read-only LaunchDarkly tokens (never writer tokens)
+- Implement token expiration check with user notification
+- Rate limit API calls to prevent abuse
+- Sanitize all data from API before rendering (XSS prevention)
+
+### Recommendations
+- For production use, consider a lightweight proxy server to hide API token from browser
+- Implement Content Security Policy (CSP) headers
+- Use HTTPS only (enforce in production)
+- Regular dependency updates for security patches
+
+---
+
+## 13. Performance Considerations
+
+### Optimization Strategies
+- Fixed pagination of 5 flags per page to limit API load on LaunchDarkly
+- Lazy load flag details (only fetch when user clicks)
+- Cache API responses with TanStack Query (stale-while-revalidate)
+- Debounce search input (300ms) to reduce API calls
+- Optimize bundle size with code splitting (React.lazy)
+
+### Target Metrics
+- Initial load: < 2 seconds
+- Flag list render: < 500ms
+- Search responsiveness: < 100ms (with debounce)
+- Bundle size: < 500KB gzipped
+
+---
+
+## Appendix: LaunchDarkly API Response Examples
+
+### Example: Project List Response
+```json
+{
+  "items": [
+    {
+      "key": "my-project",
+      "name": "My Project",
+      "tags": ["production"],
+      "environments": [
+        {
+          "key": "production",
+          "name": "Production",
+          "color": "417505"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Example: Feature Flag Response
+```json
+{
+  "key": "new-checkout",
+  "name": "New Checkout Flow",
+  "description": "Enable new checkout",
+  "kind": "boolean",
+  "creationDate": 1609459200000,
+  "archived": false,
+  "on": true,
+  "variations": [
+    { "_id": "var1", "value": false },
+    { "_id": "var2", "value": true }
+  ],
+  "environments": {
+    "production": {
+      "on": true,
+      "targets": [
+        { "values": ["user-123"], "variation": 1 }
+      ],
+      "rules": [
+        {
+          "_id": "rule1",
+          "description": "Beta users",
+          "clauses": [
+            {
+              "attribute": "segment",
+              "op": "in",
+              "values": ["beta"],
+              "negate": false
+            }
+          ],
+          "variation": 1
+        }
+      ],
+      "fallthrough": { "variation": 0 },
+      "offVariation": 0
+    }
+  }
+}
+```
