@@ -125,21 +125,32 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 
 ### Nice-to-have Features (Post-MVP)
 
-#### F8: Flag History (Future)
+#### F10: Flag History (Future)
 - [ ] Show flag change audit log
 - [ ] Display who changed what and when
 
-#### F9: Export Configurations (Future)
+#### F11: Export Configurations (Future)
 - [ ] Export flag configurations as JSON
 - [ ] Copy flag settings to clipboard
 
-#### F10: Multi-Account Support (Future)
+#### F12: Multi-Account Support (Future)
 - [ ] Store multiple API keys
 - [ ] Switch between LaunchDarkly accounts
 
-#### F11: Dark Mode (Future)
-- [ ] Toggle dark/light theme
-- [ ] Persist theme preference
+#### F8: Dark Mode — DONE
+- [x] Toggle dark/light theme via Sun/Moon button in header
+- [x] Persist theme preference in localStorage (`light-darkly-theme`)
+- [x] Respect system preference (`prefers-color-scheme: dark`) as default
+- [x] Inline script in `index.html` prevents flash of unstyled content (FOUC)
+- [x] All components styled with Tailwind `dark:` variants
+- [x] Uses `useSyncExternalStore` for reactive theme state
+- **Status:** Implemented. Class-based dark mode (`darkMode: "class"` in Tailwind config).
+
+#### F9: Footer with Branding — DONE
+- [x] Footer displays "From EDH with ❤️"
+- [x] GitHub icon links to public repo: `https://github.com/rednam-ntn/light-darkly`
+- [x] Footer styled consistently in both light and dark modes
+- **Status:** Implemented in `src/components/layout/Footer.tsx`, included via `AppLayout.tsx`.
 
 ---
 

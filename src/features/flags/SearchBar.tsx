@@ -33,7 +33,7 @@ export function SearchBar({ value, onChange, resultCount, totalCount, isSearchin
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Search flags by name or key..."
-        className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-9 text-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-9 text-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
       />
       {localValue && (
         <button

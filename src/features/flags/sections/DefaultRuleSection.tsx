@@ -22,16 +22,16 @@ export function DefaultRuleSection({
   envName,
 }: DefaultRuleSectionProps) {
   return (
-    <section className="rounded-lg border border-gray-200 bg-white">
-      <h3 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-gray-900">
+    <section className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <h3 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100">
         Default Rule / Fallthrough ({envName})
       </h3>
       <div className="space-y-3 px-5 py-4">
         {/* Default when on */}
         <div className="text-sm">
-          <span className="font-medium text-gray-600">When targeting is ON, serve: </span>
+          <span className="font-medium text-gray-600 dark:text-gray-400">When targeting is ON, serve: </span>
           {fallthrough.variation !== undefined && fallthrough.variation !== null ? (
-            <span className="font-medium text-gray-800">
+            <span className="font-medium text-gray-800 dark:text-gray-200">
               {variations[fallthrough.variation]
                 ? formatVariationValue(variations[fallthrough.variation]!.value)
                 : `Variation ${fallthrough.variation}`}
@@ -57,8 +57,8 @@ export function DefaultRuleSection({
         {/* Off variation */}
         {offVariation !== undefined && offVariation !== null && (
           <div className="text-sm">
-            <span className="font-medium text-gray-600">When targeting is OFF, serve: </span>
-            <span className="font-medium text-gray-800">
+            <span className="font-medium text-gray-600 dark:text-gray-400">When targeting is OFF, serve: </span>
+            <span className="font-medium text-gray-800 dark:text-gray-200">
               {variations[offVariation]
                 ? formatVariationValue(variations[offVariation]!.value)
                 : `Variation ${offVariation}`}
@@ -68,7 +68,7 @@ export function DefaultRuleSection({
 
         {/* Current status */}
         <div className="text-sm">
-          <span className="font-medium text-gray-600">Current status: </span>
+          <span className="font-medium text-gray-600 dark:text-gray-400">Current status: </span>
           <span className={`font-medium ${isOn ? "text-green-700" : "text-red-600"}`}>
             {isOn ? "ON" : "OFF"}
           </span>

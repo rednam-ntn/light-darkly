@@ -67,7 +67,7 @@ export function FlagDetail() {
       {/* Back link */}
       <Link
         to={`/projects/${projectKey}`}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400"
       >
         <ArrowLeft size={14} />
         Back to Flags
@@ -76,14 +76,14 @@ export function FlagDetail() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{flag.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{flag.name}</h1>
           <Badge variant={flag.kind === "boolean" ? "info" : "warning"}>
             {flag.kind === "boolean" ? "Boolean" : "Multivariate"}
           </Badge>
         </div>
         <p className="mt-1 font-mono text-sm text-gray-400">{flag.key}</p>
         {flag.description && (
-          <p className="mt-2 text-sm text-gray-600">{flag.description}</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{flag.description}</p>
         )}
         <div className="mt-2 flex items-center gap-1 text-xs text-gray-400">
           <Calendar size={12} />
@@ -97,7 +97,7 @@ export function FlagDetail() {
       </div>
 
       {/* All Environments - Expandable Sections */}
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Environments
       </h2>
       <div className="space-y-3">
@@ -113,7 +113,7 @@ export function FlagDetail() {
         ))}
 
         {envEntries.length === 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
             No environment configurations found for this flag.
           </div>
         )}

@@ -89,12 +89,12 @@ export function FlagList() {
       <div className="mb-6">
         <Link
           to="/projects"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400"
         >
           <ArrowLeft size={14} />
           Back to Projects
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Feature Flags
           <span className="ml-2 text-base font-normal text-gray-400">
             {projectKey}
@@ -137,7 +137,7 @@ export function FlagList() {
           <button
             onClick={handleLoadMore}
             disabled={isFetching}
-            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {isFetching ? "Loading..." : "Load more"}
           </button>

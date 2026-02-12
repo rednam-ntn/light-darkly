@@ -67,17 +67,17 @@ export function ProjectList() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Projects</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">Projects</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {accumulated.map((project) => (
           <button
             key={project.key}
             onClick={() => navigate(`/projects/${project.key}`)}
-            className="rounded-lg border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-primary-300 hover:shadow-md"
+            className="rounded-lg border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-primary-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
           >
             <div className="mb-2 flex items-center gap-2">
               <FolderKanban size={18} className="text-primary-500" />
-              <h2 className="font-semibold text-gray-900">{project.name}</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">{project.name}</h2>
             </div>
             <p className="mb-3 font-mono text-xs text-gray-400">{project.key}</p>
             {project.tags.length > 0 && (
@@ -101,7 +101,7 @@ export function ProjectList() {
           <button
             onClick={handleLoadMore}
             disabled={isFetching}
-            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {isFetching ? "Loading..." : "Load more"}
           </button>

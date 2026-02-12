@@ -28,23 +28,23 @@ export function EnvironmentSection({
 
   return (
     <div
-      className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+      className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
       style={{ borderLeftColor: `#${envColor}`, borderLeftWidth: 4 }}
     >
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-gray-50"
+        className="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-gray-700"
         aria-expanded={open}
         aria-controls={`env-section-${envKey}`}
       >
         <StatusDot on={config.on} size="md" />
-        <span className="font-semibold text-gray-900">{envName}</span>
+        <span className="font-semibold text-gray-900 dark:text-gray-100">{envName}</span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             config.on
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-700"
+              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
+              : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
           }`}
         >
           {config.on ? "ON" : "OFF"}
@@ -58,7 +58,7 @@ export function EnvironmentSection({
       </button>
 
       {open && (
-        <div id={`env-section-${envKey}`} className="space-y-4 border-t border-gray-100 px-5 py-4">
+        <div id={`env-section-${envKey}`} className="space-y-4 border-t border-gray-100 px-5 py-4 dark:border-gray-700">
           <TargetingRulesSection
             rules={config.rules ?? []}
             variations={variations}

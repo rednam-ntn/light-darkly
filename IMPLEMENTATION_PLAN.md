@@ -396,7 +396,22 @@
 - [x] Update `vercel.json` with rewrites to serverless function
 - [x] Update `docker-compose.yml` — pass Basic Auth env vars, remove stale VITE_LD_API_TOKEN ARG
 
-### 6.4 Testing Updates
+### 6.4 Feature: Dark Mode + Footer
+- [x] Add `darkMode: "class"` to `tailwind.config.js`
+- [x] Create `src/hooks/useDarkMode.ts` with localStorage persistence + `useSyncExternalStore`
+- [x] Add inline script in `index.html` to prevent FOUC (flash of unstyled content)
+- [x] Add dark body classes to `index.html`
+- [x] Update `src/components/layout/Header.tsx` with Sun/Moon toggle button
+- [x] Create `src/components/layout/Footer.tsx` with "From EDH with ❤️" + GitHub icon
+- [x] Update `src/components/layout/AppLayout.tsx` to include Footer
+- [x] Apply `dark:` variants to all components:
+  - Badge, SearchBar, EmptyState, Spinner
+  - ProjectList, FlagCard, FlagList, FlagDetail
+  - EnvironmentSection, TargetingRulesSection, IndividualTargetsSection
+  - DefaultRuleSection, PrerequisitesSection, VariationsSection
+  - ApiKeyModal, MissingTokenPage
+
+### 6.5 Testing Updates
 - [x] Updated error message in api-client test to match new getToken() message
 - [ ] Update TEST_PLAN.md with new test cases (Phase 4 checkpoint)
 
@@ -413,11 +428,13 @@
 | 2026-02-10 | Phase 5       | Complete    | 50/50 tests pass     |
 | 2026-02-11 | Phase 6.1     | Complete    | All-env sections     |
 | 2026-02-11 | Phase 6.2     | Complete    | API key management   |
+| 2026-02-12 | Phase 6.3     | Complete    | Basic Auth protection |
+| 2026-02-12 | Phase 6.4     | Complete    | Dark mode + Footer   |
 
 ---
 
 ## Task Summary
 
 - **Phase 1-5 Tasks:** 113/113 completed
-- **Phase 6 New Tasks:** 13/13 completed (12 code + 1 test plan pending)
-- **Test Results:** 50/50 pass, TypeScript 0 errors, build OK (85KB gzip)
+- **Phase 6 New Tasks:** 22/22 completed
+- **Test Results:** Build OK (87KB gzip)

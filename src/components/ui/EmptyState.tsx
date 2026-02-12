@@ -13,7 +13,7 @@ export function EmptyState({ title, description, icon }: EmptyStateProps) {
       <div className="mb-4 text-gray-300">
         {icon ?? <FolderOpen size={48} />}
       </div>
-      <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{title}</h3>
       {description && (
         <p className="mt-1 text-sm text-gray-500">{description}</p>
       )}

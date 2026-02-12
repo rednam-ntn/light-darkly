@@ -15,10 +15,10 @@ export function FlagCard({ flag, projectKey, environments }: FlagCardProps) {
   return (
     <button
       onClick={() => navigate(`/projects/${projectKey}/flags/${flag.key}`)}
-      className="w-full rounded-lg border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-primary-300 hover:shadow-md"
+      className="w-full rounded-lg border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-primary-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
     >
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">{flag.name}</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{flag.name}</h3>
         <Badge variant={flag.kind === "boolean" ? "info" : "warning"}>
           {flag.kind === "boolean" ? "Boolean" : "Multivariate"}
         </Badge>
@@ -49,9 +49,9 @@ export function FlagCard({ flag, projectKey, environments }: FlagCardProps) {
                 style={{ backgroundColor: `#${env.color}` }}
                 title={env.name}
               />
-              <span className="text-gray-600">{env.name}:</span>
+              <span className="text-gray-600 dark:text-gray-400">{env.name}:</span>
               <StatusDot on={envConfig.on} />
-              <span className={envConfig.on ? "font-medium text-green-700" : "text-gray-400"}>
+              <span className={envConfig.on ? "font-medium text-green-700 dark:text-green-400" : "text-gray-400"}>
                 {envConfig.on ? "On" : "Off"}
               </span>
               {ruleCount > 0 && (
