@@ -58,85 +58,86 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 
 ### Core Features (MVP)
 
-#### F1: API Key Configuration (Environment Variable + Browser Storage)
-- [ ] Load API token from `.env` file via `VITE_LD_API_TOKEN` as default
-- [ ] **NEW: Allow user to input/change API key via modal in header**
-  - "Change API Key" button in header (top-right, next to connection status)
-  - Modal with text input for API key
-  - **CRITICAL: API key stored ONLY in browser localStorage, NEVER sent to app server**
-  - Modal must display privacy warning: "Your API key is stored only in your browser's local storage. It is never sent to or stored on our servers."
+#### F1: API Key Configuration (Environment Variable + Browser Storage) — DONE
+- [x] Load API token from `.env` file via `VITE_LD_API_TOKEN` as default
+- [x] **Allow user to input/change API key via modal in header**
+  - "API Key" button in header (top-right, next to connection status)
+  - Modal with password input for API key
+  - **API key stored ONLY in browser localStorage, NEVER sent to app server**
+  - Modal displays privacy warning: "Your API key is stored only in your browser's local storage. It is never sent to or stored on our servers."
   - Browser-stored key takes precedence over `.env` key
   - User can clear browser key to revert to `.env` key
-- [ ] If neither `.env` nor browser key exists, show MissingTokenPage with option to input key
-- [ ] Validate token on app startup by making test API call
-- [ ] Display connection status in header (connected/error/missing token)
-- **Acceptance Criteria:** App reads token from localStorage first, falls back to `.env`. User can change key via modal. Key is NEVER stored server-side. Privacy warning displayed in modal.
+- [x] If neither `.env` nor browser key exists, show MissingTokenPage with "Enter API Key" button + privacy notice
+- [x] Validate token on app startup by making test API call
+- [x] Display connection status in header (connected/error/missing token)
+- **Status:** Implemented. Token priority: localStorage > `.env`. Privacy warning on both MissingTokenPage and ApiKeyModal.
 
-#### F2: Project Selection
-- [ ] Fetch and display all accessible projects
-- [ ] Show project name and key
-- [ ] Allow user to select a project
-- **Acceptance Criteria:** All projects from API are listed, clicking one loads its environments
+#### F2: Project Selection — DONE
+- [x] Fetch and display all accessible projects (Load more pattern, 20 per page)
+- [x] Show project name and key
+- [x] Allow user to select a project
+- **Status:** Implemented with "Load more" pagination (limit=20, offset-based).
 
-#### F3: Environment Navigation (REMOVED from Main Dashboard)
-- [ ] Environments are NOT selectable on the main dashboard
-- [ ] Environment switching is ONLY available on the Flag Detail page (see F5)
-- [ ] Main dashboard shows flag overview across ALL environments simultaneously
-- **Acceptance Criteria:** Main dashboard has no environment selector; all-env overview is shown per flag
+#### F3: Environment Navigation (REMOVED from Main Dashboard) — DONE
+- [x] Environments are NOT selectable on the main dashboard
+- [x] All environments shown as expandable sections on Flag Detail page (see F5)
+- [x] Main dashboard shows flag overview across ALL environments simultaneously
+- **Status:** No environment selector on dashboard. All-env overview per flag.
 
-#### F4: Feature Flag List (All-Environment Overview)
-- [ ] Display flags for selected project with overview across ALL environments
-- [ ] Fixed pagination: 5 flags per page (NOT configurable - to limit API load)
-- [ ] Each flag card shows:
-  - Flag name and key
-  - Type badge (Boolean/Multivariate)
-  - Status grid: On/Off indicator for EACH environment (e.g., Prod: On, Stage: Off, Dev: On)
-  - Rule count per environment
-- [ ] Search flags by name or key
-- [ ] Filter by status (on/off in any env), type, or tags
-- [ ] Pagination controls: Previous/Next with page number display
-- **Acceptance Criteria:** 5 flags per page (fixed), each flag shows status across all environments, pagination works correctly
+#### F4: Feature Flag List (All-Environment Overview) — DONE
+- [x] Display flags for selected project with overview across ALL environments
+- [x] Fixed pagination: 5 flags per page (NOT configurable)
+- [x] Each flag card shows: name, key, type badge, env status grid, rule count
+- [x] Search flags by name or key (debounced 300ms)
+- [x] Filter by status, type, tags
+- [x] Pagination controls: Previous/Next with page display
+- **Status:** Implemented. "Load more" pattern for flags with 5 per page.
 
-#### F5: Feature Flag Details (All Environments - Expandable Sections)
-- [ ] Click on flag from list to view full details
-- [ ] **REMOVED: Environment selector dropdown**
-- [ ] **NEW: Display ALL environments as expandable/collapsible sections**
+#### F5: Feature Flag Details (All Environments - Expandable Sections) — DONE
+- [x] Click on flag from list to view full details
+- [x] **Display ALL environments as expandable/collapsible sections**
   - Each environment rendered as a separate collapsible section
-  - Section header shows: environment name, color indicator, ON/OFF status badge
-  - **Collapsed state:** Shows summary — environment name + ON/OFF status badge
-  - **Expanded state:** Shows full details — targeting rules, individual targets, default rule, prerequisites
-  - All sections collapsed by default (user expands as needed)
-  - Environment color from API used as left border or accent
-- [ ] Display header: name, key, description, type, created date
-- [ ] Show all variations with name, value, and description (shared across envs, shown once at top)
-- [ ] Each environment section (when expanded) shows:
-  - Targeting rules with conditions, operators, values, rollout strategy
-  - Individual targets
-  - Default rule (fallthrough)
-  - Prerequisites
-- **Acceptance Criteria:** All environments visible at once. Expand/collapse works. Collapsed shows ON/OFF summary. No dropdown selector.
+  - Section header: environment name, color left-border, ON/OFF badge
+  - Collapsed: summary only. Expanded: full targeting details
+  - All sections collapsed by default
+- [x] Environments sorted: local-dev, dev, test, stage, production (custom order)
+- [x] Display header: name, key, description, type, created date
+- [x] Variations shown once at top (shared across envs)
+- [x] Each env section shows: targeting rules, individual targets, default rule, prerequisites
+- **Status:** Implemented. No dropdown selector. Env order configurable.
 
-#### F6: Responsive Design
-- [ ] Desktop layout (1280px+): sidebar navigation + main content
-- [ ] Tablet layout (768px-1279px): collapsible sidebar
-- [ ] Mobile layout (< 768px): stacked layout with bottom nav
-- **Acceptance Criteria:** App is usable on all screen sizes without horizontal scroll
+#### F6: Responsive Design — DONE
+- [x] Desktop layout (1280px+): sidebar navigation + main content
+- [x] Tablet layout (768px-1279px): collapsible sidebar
+- [x] Mobile layout (< 768px): stacked layout with bottom nav
+- **Status:** Implemented. Responsive on all breakpoints.
+
+#### F7: Basic Auth Protection (Optional, env-var driven) — DONE
+- [x] Check `BASIC_AUTH_USERNAME` and `BASIC_AUTH_PASSWORD` env vars on app start
+- [x] If both are set → enable HTTP Basic Auth for ALL pages
+- [x] If either is missing/empty → no auth required (app works as before)
+- [x] Credentials are server-side only (NOT exposed in client bundle)
+- [x] Works across all deployment targets:
+  - **Dev (Vite):** Server middleware plugin checks Basic Auth headers
+  - **Docker Prod (Nginx):** Entrypoint script generates htpasswd at container startup
+  - **Vercel:** Serverless function (`api/auth.ts`) checks auth before serving index.html
+- **Status:** Implemented. Fully optional — zero config change if not needed.
 
 ### Nice-to-have Features (Post-MVP)
 
-#### F7: Flag History (Future)
+#### F8: Flag History (Future)
 - [ ] Show flag change audit log
 - [ ] Display who changed what and when
 
-#### F8: Export Configurations (Future)
+#### F9: Export Configurations (Future)
 - [ ] Export flag configurations as JSON
 - [ ] Copy flag settings to clipboard
 
-#### F9: Multi-Account Support (Future)
+#### F10: Multi-Account Support (Future)
 - [ ] Store multiple API keys
 - [ ] Switch between LaunchDarkly accounts
 
-#### F10: Dark Mode (Future)
+#### F11: Dark Mode (Future)
 - [ ] Toggle dark/light theme
 - [ ] Persist theme preference
 
@@ -484,36 +485,59 @@ interface Prerequisite {
 ### System Diagram
 
 ```
-┌─────────────────┐
-│   Browser       │
-│                 │
-│  React + Vite   │
-│  TypeScript     │
-│  TanStack Query │
-│  Tailwind CSS   │
-└────────┬────────┘
-         │
-         │ HTTPS API Calls
-         │ (Authorization: Bearer <token>)
-         │
-         ▼
-┌─────────────────────────┐
-│  LaunchDarkly API       │
-│  api.launchdarkly.com   │
-│                         │
-│  GET /api/v2/projects   │
-│  GET /api/v2/flags/:key │
-└─────────────────────────┘
+                    ┌─────────────────────────────────────────────┐
+                    │              Deployment Targets              │
+                    ├─────────────────────────────────────────────┤
+                    │                                             │
+                    │  ┌─── Dev (Vite) ───────────────────────┐  │
+                    │  │  Vite Plugin: basicAuthPlugin()       │  │
+                    │  │  Checks BASIC_AUTH_USERNAME/PASSWORD   │  │
+                    │  │  from process.env                     │  │
+                    │  └───────────────────────────────────────┘  │
+                    │                                             │
+                    │  ┌─── Docker Prod (Nginx) ──────────────┐  │
+                    │  │  docker-entrypoint.sh                 │  │
+                    │  │  → generates .htpasswd from env vars  │  │
+                    │  │  → nginx auth_basic directive          │  │
+                    │  └───────────────────────────────────────┘  │
+                    │                                             │
+                    │  ┌─── Vercel ────────────────────────────┐  │
+                    │  │  Serverless Function: api/auth.ts     │  │
+                    │  │  Checks Basic Auth header             │  │
+                    │  │  → Pass: serves index.html            │  │
+                    │  │  → Fail: 401 Unauthorized             │  │
+                    │  └───────────────────────────────────────┘  │
+                    └──────────────────┬──────────────────────────┘
+                                       │
+                                       ▼
+┌──────────────────┐          ┌─────────────────┐
+│    Browser       │  HTTPS   │   Static SPA    │
+│                  │◄────────►│   (React App)   │
+│  Basic Auth      │          │   dist/         │
+│  prompt (if on)  │          └────────┬────────┘
+└──────────────────┘                   │
+                                       │ HTTPS API Calls
+                                       │ (Authorization: Bearer <token>)
+                                       │ Token from localStorage or .env
+                                       ▼
+                           ┌─────────────────────────┐
+                           │  LaunchDarkly API       │
+                           │  app.launchdarkly.com   │
+                           │                         │
+                           │  GET /api/v2/projects   │
+                           │  GET /api/v2/flags/:key │
+                           └─────────────────────────┘
 ```
 
 ### Docker Infrastructure
 
-**No database or backend services needed** - this is a pure frontend app that calls LaunchDarkly API directly.
+**No database or backend services needed** - this is a pure frontend SPA that calls LaunchDarkly API directly from the browser.
 
-| Service  | Image       | Purpose                    | Port |
-| -------- | ----------- | -------------------------- | ---- |
-| frontend | node:20     | Vite dev server (dev mode) | 5173 |
-| frontend | nginx:alpine| Serve static build (prod)  | 80   |
+| Service  | Image        | Purpose                              | Port |
+| -------- | ------------ | ------------------------------------ | ---- |
+| dev      | node:20      | Vite dev server + Basic Auth plugin  | 5173 |
+| prod     | nginx:alpine | Static build + optional Basic Auth   | 80   |
+| vercel   | —            | Serverless function + static hosting | 443  |
 
 ### Tech Stack
 
@@ -653,23 +677,24 @@ Use Headless UI + Tailwind CSS for:
 
 ## 12. Security Considerations
 
-### API Token Storage
-- **Development:** Store in `.env.local` file (never commit to Git)
-- **Production:** Use environment variables in Docker container
-- **NO client-side storage** - token is ONLY loaded from environment variables at build/runtime
+### API Token Storage (Current Implementation)
+- **Browser localStorage:** Primary storage — user enters key via modal, stored only in browser
+- **`.env` file:** Fallback — `VITE_LD_API_TOKEN` for development convenience
+- **Priority:** localStorage > `.env`
+- **Privacy:** API key is NEVER sent to or stored on any app server
+- **Dockerfile:** No `ARG`/`ENV` for API token — removed to prevent baking into bundle
 
-### Best Practices
-- Add `.env.local` and `.env` to `.gitignore`
-- Use read-only LaunchDarkly tokens (never writer tokens)
-- Implement token expiration check with user notification
-- Rate limit API calls to prevent abuse
-- Sanitize all data from API before rendering (XSS prevention)
+### Basic Auth Protection (Current Implementation)
+- **Optional:** Enabled only when `BASIC_AUTH_USERNAME` and `BASIC_AUTH_PASSWORD` env vars are set
+- **Server-side only:** Credentials never exposed in client JavaScript bundle
+- **Supported targets:** Vite dev server, Docker/Nginx, Vercel Serverless Functions
 
-### Recommendations
-- For production use, consider a lightweight proxy server to hide API token from browser
-- Implement Content Security Policy (CSP) headers
-- Use HTTPS only (enforce in production)
-- Regular dependency updates for security patches
+### Best Practices Applied
+- `.env.local` and `.env` in `.gitignore`
+- Read-only LaunchDarkly tokens recommended
+- No `dangerouslySetInnerHTML` or XSS vectors in codebase
+- No hardcoded secrets in source code
+- HTTPS enforced on Vercel; recommended for Docker/Nginx prod
 
 ---
 

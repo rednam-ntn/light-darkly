@@ -386,7 +386,17 @@
   - Kept .env instructions as secondary option
 - [x] App.tsx unchanged — `useApiToken` reactivity handles re-renders automatically
 
-### 6.3 Testing Updates
+### 6.3 Feature: Basic Auth Protection (Optional, env-var driven)
+- [x] Add `BASIC_AUTH_USERNAME` and `BASIC_AUTH_PASSWORD` to `.env.example`
+- [x] Create Vite server middleware plugin for Basic Auth (dev mode)
+- [x] Create `docker-entrypoint.sh` — generates htpasswd from env vars at container start
+- [x] Update `nginx.conf` — nginx template with conditional `auth_basic`
+- [x] Update `Dockerfile` — install `apache2-utils`, copy entrypoint, use `ENTRYPOINT`
+- [x] Create Vercel serverless function `api/auth.ts` for Basic Auth proxy
+- [x] Update `vercel.json` with rewrites to serverless function
+- [x] Update `docker-compose.yml` — pass Basic Auth env vars, remove stale VITE_LD_API_TOKEN ARG
+
+### 6.4 Testing Updates
 - [x] Updated error message in api-client test to match new getToken() message
 - [ ] Update TEST_PLAN.md with new test cases (Phase 4 checkpoint)
 

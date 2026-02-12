@@ -10,7 +10,9 @@
       "Bash(npx vitest:*)",
       "Bash(npm i:*)",
       "Bash(vercel --yes:*)",
-      "Bash(vercel login:*)"
+      "Bash(vercel login:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run test:*)"
     ]
   }
 }

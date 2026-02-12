@@ -17,9 +17,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        VITE_LD_API_TOKEN: ${VITE_LD_API_TOKEN}
     ports:
       - "80:80"
+    environment:
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-}
     profiles:
       - prod

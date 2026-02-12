@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, KeyRound } from "lucide-react";
+import { AlertTriangle, KeyRound, Shield } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiToken } from "@/hooks/useApiToken";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
@@ -32,6 +32,14 @@ export function MissingTokenPage() {
             To use Light Darkly, enter your LaunchDarkly read-only API token below, or add it to the{" "}
             <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm">.env</code> file.
           </p>
+
+          <div className="mb-4 flex gap-3 rounded-md bg-green-50 p-3">
+            <Shield size={18} className="mt-0.5 shrink-0 text-green-600" />
+            <p className="text-xs text-green-800">
+              <strong>Privacy:</strong> Your API key is stored <strong>only</strong> in your browser's
+              local storage. It is <strong>never</strong> sent to or stored on our servers.
+            </p>
+          </div>
 
           <button
             onClick={() => setModalOpen(true)}
