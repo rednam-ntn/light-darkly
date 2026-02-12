@@ -1,15 +1,44 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FolderKanban } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import type { Project } from "@/types/launchdarkly";
+
+const PAGE_SIZE = 20;
 
 export function ProjectList() {
-  const { data: projects, isLoading, isError, error, refetch } = useProjects();
   const navigate = useNavigate();
+  const [offset, setOffset] = useState(0);
+  const [accumulated, setAccumulated] = useState<Project[]>([]);
+  const lastAppliedOffset = useRef<number | null>(null);
 
-  if (isLoading) {
+  const { data: projects, isLoading, isFetching, isError, error, refetch } = useProjects({ offset });
+
+  useEffect(() => {
+    if (!projects) return;
+    if (lastAppliedOffset.current === offset) return;
+
+    lastAppliedOffset.current = offset;
+
+    if (offset === 0) {
+      setAccumulated(projects);
+    } else {
+      setAccumulated((prev) => [...prev, ...projects]);
+    }
+  }, [projects, offset]);
+
+  const hasMore = projects ? projects.length >= PAGE_SIZE : false;
+
+  const handleLoadMore = useCallback(() => {
+    setOffset((prev) => prev + PAGE_SIZE);
+  }, []);
+
+  const isInitialLoading = isLoading && accumulated.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner size="lg" />
@@ -32,7 +61,7 @@ export function ProjectList() {
     );
   }
 
-  if (!projects?.length) {
+  if (!accumulated.length) {
     return <EmptyState title="No projects found" description="No LaunchDarkly projects are accessible with this API token." />;
   }
 
@@ -40,7 +69,7 @@ export function ProjectList() {
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Projects</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
+        {accumulated.map((project) => (
           <button
             key={project.key}
             onClick={() => navigate(`/projects/${project.key}`)}
@@ -66,6 +95,22 @@ export function ProjectList() {
           </button>
         ))}
       </div>
+
+      {hasMore && (
+        <div className="flex justify-center py-6">
+          <button
+            onClick={handleLoadMore}
+            disabled={isFetching}
+            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isFetching ? "Loading..." : "Load more"}
+          </button>
+        </div>
+      )}
+
+      <p className="text-center text-xs text-gray-400">
+        Showing {accumulated.length} project{accumulated.length !== 1 ? "s" : ""}
+      </p>
     </div>
   );
 }

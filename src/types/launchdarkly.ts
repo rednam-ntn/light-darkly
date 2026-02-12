@@ -111,7 +111,7 @@ export interface FeatureFlag {
   temporary: boolean;
   tags: string[];
   variations: Variation[];
-  environments: Record<string, FlagEnvironmentConfig>;
+  environments?: Record<string, FlagEnvironmentConfig>;
   _links?: Record<string, { href: string }>;
 }
 

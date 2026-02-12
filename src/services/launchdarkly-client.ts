@@ -1,6 +1,6 @@
 import { ApiError } from "@/types/api";
+import { getStoredApiKey } from "./api-key-store";
 import type {
-  Project,
   ProjectsResponse,
   FlagsResponse,
   FeatureFlag,
@@ -10,11 +10,14 @@ import type {
 const BASE_URL = import.meta.env.VITE_LD_API_URL || "https://app.launchdarkly.com/api/v2";
 
 function getToken(): string {
-  const token = import.meta.env.VITE_LD_API_TOKEN;
-  if (!token) {
-    throw new Error("VITE_LD_API_TOKEN is not configured");
-  }
-  return token;
+  // Priority: localStorage key > .env key
+  const storedKey = getStoredApiKey();
+  if (storedKey) return storedKey;
+
+  const envKey = import.meta.env.VITE_LD_API_TOKEN;
+  if (envKey) return envKey;
+
+  throw new Error("No API key configured. Please enter your LaunchDarkly API key.");
 }
 
 async function apiFetch<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -35,34 +38,26 @@ async function apiFetch<T>(path: string, signal?: AbortSignal): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function getProjects(signal?: AbortSignal): Promise<ProjectsResponse> {
-  const limit = 20;
-  let offset = 0;
-  let allItems: Project[] = [];
-  let totalCount = 0;
-
-  while (true) {
-    const page = await apiFetch<ProjectsResponse>(
-      `/projects?expand=environments&limit=${limit}&offset=${offset}`,
-      signal,
-    );
-    allItems = allItems.concat(page.items);
-    totalCount = page.totalCount;
-
-    if (allItems.length >= totalCount || page.items.length < limit) {
-      break;
-    }
-    offset += limit;
-  }
-
-  return { items: allItems, totalCount };
+export function getProjects(
+  options?: { limit?: number; offset?: number },
+  signal?: AbortSignal,
+): Promise<ProjectsResponse> {
+  const params = new URLSearchParams({ expand: "environments" });
+  if (options?.limit !== undefined) params.set("limit", String(options.limit));
+  if (options?.offset !== undefined) params.set("offset", String(options.offset));
+  return apiFetch<ProjectsResponse>(`/projects?${params.toString()}`, signal);
 }
 
 export function getFlags(
   projectKey: string,
+  options?: { limit?: number; offset?: number; query?: string },
   signal?: AbortSignal,
 ): Promise<FlagsResponse> {
-  return apiFetch<FlagsResponse>(`/flags/${projectKey}?summary=true`, signal);
+  const params = new URLSearchParams({ summary: "true" });
+  if (options?.limit !== undefined) params.set("limit", String(options.limit));
+  if (options?.offset !== undefined) params.set("offset", String(options.offset));
+  if (options?.query) params.set("filter", `query:${options.query}`);
+  return apiFetch<FlagsResponse>(`/flags/${projectKey}?${params.toString()}`, signal);
 }
 
 export function getFlag(
@@ -84,5 +79,5 @@ export function getEnvironments(
 }
 
 export function isTokenConfigured(): boolean {
-  return !!import.meta.env.VITE_LD_API_TOKEN;
+  return !!getStoredApiKey() || !!import.meta.env.VITE_LD_API_TOKEN;
 }

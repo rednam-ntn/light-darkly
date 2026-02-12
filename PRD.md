@@ -58,13 +58,19 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 
 ### Core Features (MVP)
 
-#### F1: API Key Configuration (Environment Variable Only)
-- [ ] Load API token from `.env` file via `VITE_LD_API_TOKEN` environment variable
-- [ ] NO UI input for API key - token is configured at build/deploy time only
+#### F1: API Key Configuration (Environment Variable + Browser Storage)
+- [ ] Load API token from `.env` file via `VITE_LD_API_TOKEN` as default
+- [ ] **NEW: Allow user to input/change API key via modal in header**
+  - "Change API Key" button in header (top-right, next to connection status)
+  - Modal with text input for API key
+  - **CRITICAL: API key stored ONLY in browser localStorage, NEVER sent to app server**
+  - Modal must display privacy warning: "Your API key is stored only in your browser's local storage. It is never sent to or stored on our servers."
+  - Browser-stored key takes precedence over `.env` key
+  - User can clear browser key to revert to `.env` key
+- [ ] If neither `.env` nor browser key exists, show MissingTokenPage with option to input key
 - [ ] Validate token on app startup by making test API call
 - [ ] Display connection status in header (connected/error/missing token)
-- [ ] Show clear error page if `VITE_LD_API_TOKEN` is not set or invalid
-- **Acceptance Criteria:** App reads token from `.env`, validates on startup, shows error if missing/invalid. No UI for token input.
+- **Acceptance Criteria:** App reads token from localStorage first, falls back to `.env`. User can change key via modal. Key is NEVER stored server-side. Privacy warning displayed in modal.
 
 #### F2: Project Selection
 - [ ] Fetch and display all accessible projects
@@ -91,23 +97,24 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 - [ ] Pagination controls: Previous/Next with page number display
 - **Acceptance Criteria:** 5 flags per page (fixed), each flag shows status across all environments, pagination works correctly
 
-#### F5: Feature Flag Details (with Environment Selector)
+#### F5: Feature Flag Details (All Environments - Expandable Sections)
 - [ ] Click on flag from list to view full details
-- [ ] **Environment selector dropdown** at top of detail page
-  - Lists all environments for the project
-  - Defaults to first environment (e.g., Production)
-  - Switching environment updates all detail sections below
-  - Persist selected environment in URL query param
+- [ ] **REMOVED: Environment selector dropdown**
+- [ ] **NEW: Display ALL environments as expandable/collapsible sections**
+  - Each environment rendered as a separate collapsible section
+  - Section header shows: environment name, color indicator, ON/OFF status badge
+  - **Collapsed state:** Shows summary — environment name + ON/OFF status badge
+  - **Expanded state:** Shows full details — targeting rules, individual targets, default rule, prerequisites
+  - All sections collapsed by default (user expands as needed)
+  - Environment color from API used as left border or accent
 - [ ] Display header: name, key, description, type, created date
-- [ ] Show all variations with name, value, and description
-- [ ] Display targeting rules for SELECTED environment:
-  - Rule description
-  - Conditions (attribute, operator, values)
-  - Rollout strategy (percentage or fixed variation)
-- [ ] Show individual targets for SELECTED environment
-- [ ] Display default rule (fallthrough) for SELECTED environment
-- [ ] Show prerequisites (dependent flags)
-- **Acceptance Criteria:** Environment selector changes all targeting/rule data. All flag data for selected environment is clearly presented.
+- [ ] Show all variations with name, value, and description (shared across envs, shown once at top)
+- [ ] Each environment section (when expanded) shows:
+  - Targeting rules with conditions, operators, values, rollout strategy
+  - Individual targets
+  - Default rule (fallthrough)
+  - Prerequisites
+- **Acceptance Criteria:** All environments visible at once. Expand/collapse works. Collapsed shows ON/OFF summary. No dropdown selector.
 
 #### F6: Responsive Design
 - [ ] Desktop layout (1280px+): sidebar navigation + main content
@@ -140,13 +147,21 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 ### Main User Flow: View Feature Flag Details
 
 ```
-[App Start] → [Load API Key from .env]
+[App Start] → [Check localStorage for API Key]
+                     ↓
+              [Found?] → [Yes] → [Use localStorage key]
+                     ↓ No
+              [Check .env VITE_LD_API_TOKEN]
+                     ↓
+              [Found?] → [Yes] → [Use .env key]
+                     ↓ No
+              [Show MissingTokenPage with "Enter API Key" button]
                      ↓
               [Validate Token via API]
                ↓              ↓
-          [Success]       [Error/Missing]
+          [Success]       [Error/Invalid]
                ↓              ↓
-      [Load Projects]  [Show Error Page]
+      [Load Projects]  [Show Error + "Change API Key" button]
                ↓
       [Select Project]
                ↓
@@ -155,23 +170,26 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
                ↓
       [Click Flag] → [Flag Detail Page]
                ↓
-      [Select Environment] (dropdown)
+      [View ALL environments as expandable sections]
+      [Expand any env → see targeting rules, targets, defaults]
                ↓
-      [View Rules & Variations for env]
-               ↓
-      [Switch env or Back to list]
+      [Back to list or Change API Key via header button]
 ```
 
 ### App Startup Flow
 
 ```
-[App Loads] → [Read VITE_LD_API_TOKEN from .env]
+[App Loads] → [Check localStorage for API Key]
                       ↓
-              [Token exists?]
+              [localStorage key exists?]
                ↓            ↓
-          [Yes]          [No]
-               ↓            ↓
-     [Validate API]  [Show "Missing Token" Error Page]
+          [Yes]          [No] → [Check .env VITE_LD_API_TOKEN]
+               ↓                    ↓            ↓
+     [Use localStorage]        [Yes]          [No]
+               ↓                    ↓            ↓
+     [Validate API]          [Use .env]  [Show Missing Token Page]
+                                  ↓       (with "Enter Key" button)
+                           [Validate API]
           ↓       ↓       (with .env setup instructions)
     [Valid]   [Invalid]
           ↓       ↓
@@ -250,64 +268,69 @@ A lightweight React web application that connects to LaunchDarkly's REST API usi
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-### Screen 3: Feature Flag Detail View (with Environment Selector)
+### Screen 3: Feature Flag Detail View (All Environments - Expandable)
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│ Light Darkly                   [← Back to Flags]                  │
+│ ⚡ Light Darkly              ● Connected  [🔑 Change API Key]    │
 ├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ← Back to Flags                                                  │
 │                                                                   │
 │  new-checkout-flow                            [Boolean Flag]      │
 │  Key: new-checkout-flow                        Created: ...       │
 │  "Enable new checkout flow with one-click purchase"               │
 │                                                                   │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │  Environment: [Production ▼]                                │ │
-│  │               ┌──────────────┐                              │ │
-│  │               │ ● Production │  ← currently viewing         │ │
-│  │               │   Staging    │                              │ │
-│  │               │   Development│                              │ │
-│  │               └──────────────┘                              │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-│                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
 │  │ Variations                                                  │ │
-│  │ ─────────────────────────────────────────────────────────── │ │
 │  │ • True:  "Enable new flow"                                  │ │
 │  │ • False: "Use legacy checkout"                              │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 │                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ Targeting Rules (Production)                                │ │
-│  │ ─────────────────────────────────────────────────────────── │ │
-│  │ Rule 1: Beta Users                                          │ │
-│  │   IF user.segment = "beta-testers"                          │ │
-│  │   THEN serve: True (100%)                                   │ │
-│  │                                                              │ │
-│  │ Rule 2: Gradual Rollout                                     │ │
-│  │   IF user.country = "US"                                    │ │
-│  │   THEN serve: True (25%), False (75%)                       │ │
-│  └─────────────────────────────────────────────────────────────┘ │
+│  ┌─ 🟢 Production ──────────────────────── ● ON ─── [▼ collapse]┐│
+│  │                                                               ││
+│  │  Targeting Rules                                              ││
+│  │  Rule 1: Beta Users                                           ││
+│  │    IF user.segment = "beta-testers" → True (100%)             ││
+│  │  Rule 2: Gradual Rollout                                      ││
+│  │    IF user.country = "US" → True (25%), False (75%)           ││
+│  │                                                               ││
+│  │  Individual Targets                                           ││
+│  │  True: user-123, user-456 | False: user-789                   ││
+│  │                                                               ││
+│  │  Default Rule: Serve False                                    ││
+│  │  Prerequisites: "auth-v2" = True                              ││
+│  └───────────────────────────────────────────────────────────────┘│
 │                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ Individual Targets (Production)                             │ │
-│  │ ─────────────────────────────────────────────────────────── │ │
-│  │ True: user-123, user-456                                    │ │
-│  │ False: user-789                                             │ │
-│  └─────────────────────────────────────────────────────────────┘ │
+│  ┌─ 🔵 Staging ─────────────────────────── ● ON ─── [▶ expand] ┐│
+│  └───────────────────────────────────────────────────────────────┘│
 │                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ Default Rule / Fallthrough (Production)                     │ │
-│  │ ─────────────────────────────────────────────────────────── │ │
-│  │ Serve: False (Off for everyone else)                        │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-│                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ Prerequisites                                               │ │
-│  │ ─────────────────────────────────────────────────────────── │ │
-│  │ Requires: "auth-v2" = True                                  │ │
-│  └─────────────────────────────────────────────────────────────┘ │
+│  ┌─ 🟡 Development ─────────────────────── ○ OFF ── [▶ expand] ┐│
+│  └───────────────────────────────────────────────────────────────┘│
 │                                                                   │
 └───────────────────────────────────────────────────────────────────┘
+```
+
+### API Key Modal
+```
+┌───────────────────────────────────────────────┐
+│  🔑 Change API Key                      [✕]   │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Enter your LaunchDarkly API key:             │
+│  ┌─────────────────────────────────────────┐  │
+│  │ api-xxxx-xxxx-xxxx                      │  │
+│  └─────────────────────────────────────────┘  │
+│                                               │
+│  ┌─────────────────────────────────────────┐  │
+│  │ 🔒 Privacy Notice                      │  │
+│  │ Your API key is stored ONLY in your     │  │
+│  │ browser's local storage. It is never    │  │
+│  │ sent to or stored on our servers.       │  │
+│  └─────────────────────────────────────────┘  │
+│                                               │
+│        [Clear Key]            [Save Key]      │
+│                                               │
+└───────────────────────────────────────────────┘
 ```
 
 ---

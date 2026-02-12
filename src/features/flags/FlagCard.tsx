@@ -32,7 +32,7 @@ export function FlagCard({ flag, projectKey, environments }: FlagCardProps) {
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {environments.map((env) => {
-          const envConfig = flag.environments[env.key];
+          const envConfig = flag.environments?.[env.key];
           if (!envConfig) return null;
 
           const ruleCount = envConfig._summary

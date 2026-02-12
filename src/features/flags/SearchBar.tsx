@@ -6,9 +6,10 @@ interface SearchBarProps {
   onChange: (value: string) => void;
   resultCount?: number;
   totalCount?: number;
+  isSearching?: boolean;
 }
 
-export function SearchBar({ value, onChange, resultCount, totalCount }: SearchBarProps) {
+export function SearchBar({ value, onChange, resultCount, totalCount, isSearching }: SearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -43,7 +44,10 @@ export function SearchBar({ value, onChange, resultCount, totalCount }: SearchBa
           <X size={16} />
         </button>
       )}
-      {resultCount !== undefined && totalCount !== undefined && value && (
+      {isSearching && (
+        <p className="mt-1 text-xs text-gray-500">Searching...</p>
+      )}
+      {!isSearching && resultCount !== undefined && totalCount !== undefined && value && (
         <p className="mt-1 text-xs text-gray-500">
           {resultCount} of {totalCount} flags
         </p>

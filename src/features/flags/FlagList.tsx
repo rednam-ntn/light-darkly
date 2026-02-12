@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useFlags } from "@/hooks/useFlags";
@@ -7,44 +7,59 @@ import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FlagCard } from "./FlagCard";
 import { SearchBar } from "./SearchBar";
-import { Pagination } from "./Pagination";
+import type { FeatureFlag } from "@/types/launchdarkly";
 
 const PAGE_SIZE = 5;
 
 export function FlagList() {
   const { projectKey } = useParams<{ projectKey: string }>();
-  const { data: flags, isLoading: flagsLoading, isError, error, refetch } = useFlags(projectKey);
   const { data: environments, isLoading: envsLoading } = useEnvironments(projectKey);
 
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [offset, setOffset] = useState(0);
+  const [accumulated, setAccumulated] = useState<FeatureFlag[]>([]);
+  const lastAppliedRef = useRef<{ search: string; offset: number } | null>(null);
 
-  const filtered = useMemo(() => {
-    if (!flags) return [];
-    if (!search.trim()) return flags;
-    const q = search.toLowerCase();
-    return flags.filter(
-      (f) =>
-        f.name.toLowerCase().includes(q) ||
-        f.key.toLowerCase().includes(q),
-    );
-  }, [flags, search]);
+  const { data: flags, isLoading: flagsLoading, isFetching, isError, error, refetch } = useFlags(
+    projectKey,
+    { query: search, offset },
+  );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // Accumulate results in useEffect — only when fresh data arrives for current query
+  useEffect(() => {
+    if (!flags) return;
 
-  function handleSearch(value: string) {
+    const key = { search, offset };
+    const last = lastAppliedRef.current;
+
+    // Skip if we already processed this exact (search, offset) combination
+    if (last && last.search === key.search && last.offset === key.offset) return;
+
+    lastAppliedRef.current = key;
+
+    if (offset === 0) {
+      // New search or initial load — replace
+      setAccumulated(flags);
+    } else {
+      // Load more — append
+      setAccumulated((prev) => [...prev, ...flags]);
+    }
+  }, [flags, search, offset]);
+
+  const hasMore = flags ? flags.length >= PAGE_SIZE : false;
+
+  const handleSearch = useCallback((value: string) => {
     setSearch(value);
-    setPage(1);
+    setOffset(0);
+    setAccumulated([]);
+    lastAppliedRef.current = null;
+  }, []);
+
+  function handleLoadMore() {
+    setOffset((prev) => prev + PAGE_SIZE);
   }
 
-  function handlePageChange(newPage: number) {
-    setPage(newPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  const isLoading = flagsLoading || envsLoading;
+  const isLoading = (flagsLoading && accumulated.length === 0) || envsLoading;
 
   if (isLoading) {
     return (
@@ -91,12 +106,11 @@ export function FlagList() {
         <SearchBar
           value={search}
           onChange={handleSearch}
-          resultCount={filtered.length}
-          totalCount={flags?.length}
+          isSearching={isFetching && !!search}
         />
       </div>
 
-      {paginated.length === 0 ? (
+      {accumulated.length === 0 ? (
         <EmptyState
           title={search ? "No matching flags" : "No feature flags"}
           description={
@@ -107,7 +121,7 @@ export function FlagList() {
         />
       ) : (
         <div className="space-y-3">
-          {paginated.map((flag) => (
+          {accumulated.map((flag) => (
             <FlagCard
               key={flag.key}
               flag={flag}
@@ -118,14 +132,20 @@ export function FlagList() {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      {hasMore && (
+        <div className="flex justify-center py-6">
+          <button
+            onClick={handleLoadMore}
+            disabled={isFetching}
+            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isFetching ? "Loading..." : "Load more"}
+          </button>
+        </div>
+      )}
 
       <p className="text-center text-xs text-gray-400">
-        {filtered.length} flag{filtered.length !== 1 ? "s" : ""} total &middot; 5 per page
+        Showing {accumulated.length} flag{accumulated.length !== 1 ? "s" : ""}
       </p>
     </div>
   );

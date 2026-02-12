@@ -1,39 +1,39 @@
 import { useMemo } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useFlagDetail } from "@/hooks/useFlagDetail";
 import { useEnvironments } from "@/hooks/useEnvironments";
 import { Spinner } from "@/components/ui/Spinner";
 import { Badge } from "@/components/ui/Badge";
-import { StatusDot } from "@/components/ui/StatusDot";
-import { EnvironmentSelector } from "./EnvironmentSelector";
 import { VariationsSection } from "./sections/VariationsSection";
-import { TargetingRulesSection } from "./sections/TargetingRulesSection";
-import { IndividualTargetsSection } from "./sections/IndividualTargetsSection";
-import { DefaultRuleSection } from "./sections/DefaultRuleSection";
-import { PrerequisitesSection } from "./sections/PrerequisitesSection";
+import { EnvironmentSection } from "./EnvironmentSection";
 
 export function FlagDetail() {
   const { projectKey, flagKey } = useParams<{ projectKey: string; flagKey: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: flag, isLoading: flagLoading, isError, error, refetch } = useFlagDetail(projectKey, flagKey);
   const { data: environments, isLoading: envsLoading } = useEnvironments(projectKey);
 
-  const selectedEnvKey = searchParams.get("env") ?? environments?.[0]?.key ?? "";
+  // Build ordered list of environments with their configs
+  const envEntries = useMemo(() => {
+    if (!flag?.environments || !environments) return [];
 
-  const envConfig = useMemo(() => {
-    if (!flag || !selectedEnvKey) return null;
-    return flag.environments[selectedEnvKey] ?? null;
-  }, [flag, selectedEnvKey]);
+    const ENV_ORDER = ["local-dev", "dev", "test", "stage", "production"];
+    const orderIndex = (key: string) => {
+      const idx = ENV_ORDER.indexOf(key);
+      return idx === -1 ? ENV_ORDER.length : idx;
+    };
 
-  const selectedEnvName = useMemo(() => {
-    return environments?.find((e) => e.key === selectedEnvKey)?.name ?? selectedEnvKey;
-  }, [environments, selectedEnvKey]);
-
-  function handleEnvChange(envKey: string) {
-    setSearchParams({ env: envKey });
-  }
+    return environments
+      .filter((env) => flag.environments![env.key])
+      .map((env) => ({
+        key: env.key,
+        name: env.name,
+        color: env.color,
+        config: flag.environments![env.key]!,
+      }))
+      .sort((a, b) => orderIndex(a.key) - orderIndex(b.key));
+  }, [flag, environments]);
 
   const isLoading = flagLoading || envsLoading;
 
@@ -80,14 +80,6 @@ export function FlagDetail() {
           <Badge variant={flag.kind === "boolean" ? "info" : "warning"}>
             {flag.kind === "boolean" ? "Boolean" : "Multivariate"}
           </Badge>
-          {envConfig && (
-            <div className="flex items-center gap-1.5">
-              <StatusDot on={envConfig.on} size="md" />
-              <span className={`text-sm font-medium ${envConfig.on ? "text-green-700" : "text-red-600"}`}>
-                {envConfig.on ? "On" : "Off"}
-              </span>
-            </div>
-          )}
         </div>
         <p className="mt-1 font-mono text-sm text-gray-400">{flag.key}</p>
         {flag.description && (
@@ -99,53 +91,30 @@ export function FlagDetail() {
         </div>
       </div>
 
-      {/* Environment Selector */}
-      {environments && environments.length > 0 && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white px-5 py-3">
-          <EnvironmentSelector
-            environments={environments}
-            selectedEnvKey={selectedEnvKey}
-            onChange={handleEnvChange}
-          />
-        </div>
-      )}
-
-      {/* Sections */}
-      <div className="space-y-4">
+      {/* Variations (shared across all environments) */}
+      <div className="mb-6">
         <VariationsSection variations={flag.variations} />
+      </div>
 
-        {envConfig && (
-          <>
-            <TargetingRulesSection
-              rules={envConfig.rules ?? []}
-              variations={flag.variations}
-              envName={selectedEnvName}
-            />
+      {/* All Environments - Expandable Sections */}
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        Environments
+      </h2>
+      <div className="space-y-3">
+        {envEntries.map((entry) => (
+          <EnvironmentSection
+            key={entry.key}
+            envKey={entry.key}
+            envName={entry.name}
+            envColor={entry.color}
+            config={entry.config}
+            variations={flag.variations}
+          />
+        ))}
 
-            <IndividualTargetsSection
-              targets={envConfig.targets ?? []}
-              variations={flag.variations}
-              envName={selectedEnvName}
-            />
-
-            <DefaultRuleSection
-              fallthrough={envConfig.fallthrough}
-              offVariation={envConfig.offVariation}
-              isOn={envConfig.on}
-              variations={flag.variations}
-              envName={selectedEnvName}
-            />
-
-            <PrerequisitesSection
-              prerequisites={envConfig.prerequisites ?? []}
-              variations={flag.variations}
-            />
-          </>
-        )}
-
-        {!envConfig && selectedEnvKey && (
+        {envEntries.length === 0 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-            No configuration found for environment "{selectedEnvKey}".
+            No environment configurations found for this flag.
           </div>
         )}
       </div>

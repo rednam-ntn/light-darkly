@@ -17,7 +17,7 @@ describe("LaunchDarkly API Client", () => {
 
     const { getProjects } = await import("@/services/launchdarkly-client");
 
-    await expect(getProjects()).rejects.toThrow("VITE_LD_API_TOKEN is not configured");
+    await expect(getProjects()).rejects.toThrow("No API key configured");
   });
 
   it("includes Authorization header in requests", async () => {

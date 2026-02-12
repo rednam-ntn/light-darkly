@@ -4,58 +4,92 @@
 INVESTIGATING
 
 ## Bug Title
-Project `om-edh` missing from project list due to LaunchDarkly API default pagination limit of 20
+Flags page limited to 20 flags (API default) and search only filters within those 20
 
 ## Bug Description
-The main projects page at `/projects` does not show all projects. The project `om-edh` is missing from the list, but is accessible directly via `/projects/om-edh`. This indicates the project exists and the API token has access, but the projects page doesn't fetch it.
+Two related issues on the project flags page (e.g. `/projects/om-edh`):
+
+1. **Pagination shows only 20 flags**: The API defaults to `limit=20`. The code fetches one page and paginates client-side, so projects with hundreds of flags only show 20.
+2. **Search only filters client-side within those 20**: The search bar does a `name.includes()` / `key.includes()` against the 20 already-fetched flags, missing the rest.
 
 ## Steps to Reproduce
-1. Open http://localhost:5173/projects
-2. Look for project `om-edh` in the list
-3. It's not there
-4. Navigate directly to http://localhost:5173/projects/om-edh
-5. The project loads fine (flags are visible)
+1. Navigate to `/projects/om-edh`
+2. Observe only 20 flags are listed (4 pages × 5)
+3. Search for a flag name that exists beyond the first 20 — no results
 
 ## Actual Result
-Only the first 20 projects are shown. `om-edh` is beyond page 1 and is missing.
+- Only 20 flags shown with client-side pagination
+- Search only matches within those 20
 
 ## Expected Result
-All accessible projects should be displayed on the projects page, including `om-edh`.
+- Show only the first **5 flags**, no pagination, no page controls
+- Search uses the LaunchDarkly API `filter=query:<term>` (case-insensitive partial match on key/name), paginated with 5 results per page and a "Load more" button (no total pages displayed)
 
 ## Context
-- **Error Message**: None (no error, just incomplete data)
-- **Environment**: localhost:5173, LaunchDarkly REST API v2
-- **API Docs**: [List projects](https://launchdarkly.com/docs/api/projects/get-projects) — defaults to `limit=20`
+- **API Docs**: `GET /api/v2/flags/:projectKey` supports `limit`, `offset`, and `filter=query:<term>` (case-insensitive substring match on key/name)
+- **Current code**: `getFlags()` calls `/flags/${projectKey}?summary=true` with no limit/filter params
 
 ---
 
 ## Root Cause Analysis
 
-The issue is in [launchdarkly-client.ts:37-38](src/services/launchdarkly-client.ts#L37-L38):
-
+**Problem 1 — Only 20 flags fetched:**
 ```
-GET /api/v2/projects?expand=environments
+src/services/launchdarkly-client.ts:64
+  → GET /flags/{projectKey}?summary=true    ← no limit param, API defaults to 20
 ```
 
-The LaunchDarkly API paginates by default with `limit=20`. Our code fetches only the first page and never follows `_links.next` for subsequent pages. If the account has >20 projects, any project beyond the first 20 is invisible.
-
+**Problem 2 — Client-side-only search:**
 ```
-API returns:  { items: [proj1..proj20], totalCount: 25, _links: { next: ... } }
-Code reads:   data.items  →  only 20 projects shown
-Result:       om-edh (project #21+) is missing
+src/features/flags/FlagList.tsx:22-31
+  → filtered = flags.filter(f => f.name.includes(q) || f.key.includes(q))
+  → Only filters within the 20 flags already in memory
+```
+
+**Data flow (current):**
+```
+API (default 20) → useFlags → FlagList (client filter + paginate) → 5 per page
+```
+
+**Data flow (desired):**
+```
+API (limit=5, offset=0) → useFlags → FlagList (display results + "Load more")
+API (limit=5, offset=0, filter=query:term) → useFlags → FlagList (search results + "Load more")
 ```
 
 ## Proposed Fixes
 
-**Fix (Recommended): Fetch all pages by looping until no `next` link**
+### Files to change:
+1. **`src/services/launchdarkly-client.ts`** — Update `getFlags()` to accept `limit` and `filter` params
+2. **`src/hooks/useFlags.ts`** — Accept search query, pass to API, use `filter=query:<term>` when searching
+3. **`src/features/flags/FlagList.tsx`** — Remove client-side filtering and pagination; show only API results; keep search bar wired to API query
+4. **`src/features/flags/SearchBar.tsx`** — Add loading indicator prop for when API search is in flight
 
-In `getProjects()`, loop through all pages using `offset` and `limit` parameters until all projects are collected.
-
-- File: `src/services/launchdarkly-client.ts`
-- Approach: Add `getAllProjects()` that fetches with `limit=20&offset=0`, then increments offset until `items` returned < limit or offset >= totalCount
-- Low risk, handles any number of projects
+### Approach:
+- Default fetch: `GET /flags/{projectKey}?summary=true&limit=5`
+- When user types search: `GET /flags/{projectKey}?summary=true&filter=query:<term>&limit=5`
+- Both default and search use offset-based pagination with `limit=5`
+- Replace `<Pagination>` (prev/next page numbers) with a simple "Load more" button
+- "Load more" increments offset by 5 and appends results; hidden when API returns < 5 items (no more results)
+- No total pages displayed (reduces API overhead)
+- Remove client-side `useMemo` filter logic
+- Use debounced search → triggers new API call via react-query, resets offset to 0
 
 ## Verification Plan
-- Manual: Open `/projects` and confirm `om-edh` is now visible
-- Automated: Add test that verifies pagination logic fetches multiple pages
-- Edge case: Verify single-page accounts still work (totalCount <= 20)
+- Manual: navigate to `/projects/om-edh`, verify only 5 flags shown with "Load more" button
+- Click "Load more" — 5 more flags appended
+- When no more flags, "Load more" button disappears
+- Search for a flag known to be beyond position 20 — should appear in results
+- Click "Load more" on search results — appends next 5 matches
+- Clear search — resets to first 5 flags
+- Run `npx vitest run`
+
+## Fix Applied
+- **Files Changed**:
+  - `src/services/launchdarkly-client.ts` — `getFlags()` now accepts `limit`, `offset`, `query` params; builds URL with `filter=query:<term>`
+  - `src/hooks/useFlags.ts` — Accepts `query` and `offset` options; passes to API; explicit `FeatureFlag[]` return type
+  - `src/features/flags/FlagList.tsx` — Removed client-side filtering and `<Pagination>`; accumulation logic moved to `useEffect` to properly handle "Load more" appending; search resets offset to 0
+  - `src/features/flags/SearchBar.tsx` — Added `isSearching` prop for loading indicator
+- **Bug Fix (Load More not updating)**: Moved accumulation from render-time IIFE to `useEffect` — the IIFE was calling `setState` during render and consuming the offset comparison before fresh data arrived, preventing append
+- **Test Results**: 50/50 tests passed, 0 regressions
+- **Verification**: Awaiting manual confirmation from user

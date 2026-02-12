@@ -6,7 +6,11 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm i:*)",
+      "Bash(vercel --yes:*)",
+      "Bash(vercel login:*)"
     ]
   }
 }
