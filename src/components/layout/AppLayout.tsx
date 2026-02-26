@@ -3,14 +3,20 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { useProjects } from "@/hooks/useProjects";
 
-export function AppLayout() {
-  const { isError, isLoading } = useProjects();
+interface AppLayoutProps {
+  showConnectionStatus?: boolean;
+}
 
-  const connectionStatus = isLoading
-    ? "loading"
-    : isError
-      ? "error"
-      : "connected";
+export function AppLayout({ showConnectionStatus = true }: AppLayoutProps) {
+  const { isError, isLoading } = useProjects({ enabled: showConnectionStatus });
+
+  const connectionStatus: "connected" | "error" | "loading" = !showConnectionStatus
+    ? "connected"
+    : isLoading
+      ? "loading"
+      : isError
+        ? "error"
+        : "connected";
 
   return (
     <div className="flex min-h-screen flex-col">

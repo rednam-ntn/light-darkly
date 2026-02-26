@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Zap, KeyRound, Moon, Sun } from "lucide-react";
+import { Link, NavLink } from "react-router-dom";
+import { Zap, KeyRound, Moon, Sun, Timer } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiToken } from "@/hooks/useApiToken";
 import { useDarkMode } from "@/hooks/useDarkMode";
@@ -34,6 +34,22 @@ export function Header({ connectionStatus }: HeaderProps) {
             <Zap size={20} className="text-primary-500" />
             <span>Light Darkly</span>
           </Link>
+          <nav className="hidden sm:flex items-center gap-1 ml-4">
+            <NavLink
+              to="/tools/duration"
+              className={({ isActive }) =>
+                [
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
+                  isActive
+                    ? "bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200",
+                ].join(" ")
+              }
+            >
+              <Timer size={13} />
+              Duration
+            </NavLink>
+          </nav>
           <div className="flex items-center gap-3 text-sm">
             {connectionStatus === "connected" && (
               <>
